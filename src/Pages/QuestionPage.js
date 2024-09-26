@@ -1,248 +1,131 @@
 import React, { useState, useEffect } from 'react';
-import Text from '../SurveyComponents/Text';
-import ImageWithDescription from '../SurveyComponents/ImageWithDescription';
 import RatingScale from '../SurveyComponents/RatingScale';
-import LargeInput from '../SurveyComponents/LargeInput'; // Import LargeInput
+import RealLabelScale from '../SurveyComponents/RealLabelScale'; // New Component
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import { getAllGestures, getCSVGestures } from '../API/gesturesAPI';
+import LoopOfMovements from '../SurveyComponents/loopOfMovements';
+import './animations.css'; // Import the CSS file with the animation
+
+// Mock global flag
+const USE_REAL_LABEL_SCALE = true; // Set this flag to switch between components
 
 const QuestionPage = ({ jsonFileName, onComplete }) => {
-    const [scenarios, setScenarios] = useState([]);
-    const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
-    const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-    const [currentQuestion, setCurrentQuestion] = useState(null);
-    const [selectedRating, setSelectedRating] = useState(null);
+    const [gestures, setGestures] = useState([]);
+    const [currentGesture, setCurrentGesture] = useState(null);
     const [responses, setResponses] = useState([]);
-    const [showAdditionalInput, setShowAdditionalInput] = useState(false);
-    const [additionalInput, setAdditionalInput] = useState('');
-    const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-    const [totalQuestions, setTotalQuestions] = useState(0);
-    const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
-    const [showNextButton, setShowNextButton] = useState(false);
-    const [completedScenariosCount, setCompletedScenariosCount] = useState(0);
-    const [showMessage, setShowMessage] = useState(false);
-    const [showMandatory2, setShowMandatory2] = useState(true); // New state to control visibility of mandatory_2
-
+    const [selectedRating, setSelectedRating] = useState(null); // Track the rating
+    const [emotions, setEmotions] = useState([]);
+    const [numOptions, setNumOptions] = useState(4);
+    const [videosCompleted, setVideosCompleted] = useState(false); // Track video completion
+    const [showComponent, setShowComponent] = useState(false); // Track when to show the rating component with animation
 
     useEffect(() => {
-        const loadScenarios = async () => {
-            const data = await import(`./${jsonFileName}`);
-            const shuffledScenarios = data.scenarios.map(scenario => {
-                // Separate mandatory and non-mandatory categories
-                const mandatoryCategories = scenario.questionCategories.filter(cat => cat.mandatory);
-                const nonMandatoryCategories = scenario.questionCategories.filter(cat => !cat.mandatory);
+        const loadGestures = async () => {
+            const { gestureIds, globalEmotions, numOptions } = await getCSVGestures('/csvfile.csv');
+            setEmotions(globalEmotions);
+            setNumOptions(numOptions);
+            const allGesturesData = await getAllGestures(); // Get all available gestures
 
-                // Randomly select up to 4 non-mandatory categories
-                const selectedNonMandatory = selectRandom(nonMandatoryCategories, 4);
+            // Filter only the gestures whose IDs are in the gestureIds array from CSV
+            const filteredGestures = allGesturesData.filter(gesture =>
+                gestureIds.includes(gesture.id)
+            );
 
-                // Combine mandatory and selected non-mandatory categories, then shuffle
-                return {
-                    ...scenario,
-                    questionCategories: shuffleArray([...mandatoryCategories, ...selectedNonMandatory])
-                };
-            });
-            setScenarios(shuffledScenarios);
-            // Initialize with the first question of the first scenario
-            pickRandomQuestion(0, 0, shuffledScenarios);
-            // ... rest of your existing code
+            // Shuffle the filtered gestures and set the first one
+            const shuffledGestures = shuffleArray(filteredGestures);
+            setGestures(shuffledGestures);
+            setCurrentGesture(shuffledGestures[0]); // Set the first gesture
         };
 
-        loadScenarios();
-    }, [jsonFileName]);
+        loadGestures();
+    }, []);
 
-    const selectRandom = (array, n) => {
-        const shuffled = [...array].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, n);
+    // Shuffle the gestures
+    const shuffleArray = (array) => {
+        return [...array].sort(() => 0.5 - Math.random());
     };
 
-    useEffect(() => {
-        if (currentQuestion && currentQuestion.category === 'mandatory' && selectedRating == 6) {
-            setScenarios(scenarios.map(scenario => {
-                return {
-                    ...scenario,
-                    questionCategories: scenario.questionCategories.filter(cat => cat.mandatory)
-                };
-            }));
-        }
-    }, [currentQuestion, selectedRating]); // Add dependencies
-
-    useEffect(() => {
-                // Rest of your useEffect code...
-    
-        // Hide the Next button initially
-        setShowNextButton(false);
-    
-        // Set a timeout to show the Next button after 3 seconds
-        const timer = setTimeout(() => {
-            setShowNextButton(true);
-        }, 3000);
-
-        // Clear the timeout if the component unmounts
-        return () => clearTimeout(timer);
-    }, [currentQuestion])
-
-  const shuffleArray = (array) => {
-    let currentIndex = array.length, randomIndex;
-
-    // While there remain elements to shuffle...
-    while (currentIndex !== 0) {
-      // Pick a remaining element...
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-
-      // And swap it with the current element.
-      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-    }
-
-    return array;
-  };
-
-  const pickRandomQuestion = (scenarioIndex, categoryIndex, scenariosData) => {
-    if (scenariosData && scenariosData.length > scenarioIndex) {
-        const category = scenariosData[scenarioIndex].questionCategories[categoryIndex];
-        const randomQuestionIndex = Math.floor(Math.random() * category.questions.length);
-        setCurrentQuestion(category.questions[randomQuestionIndex]);
-        setSelectedRating(null); // Reset the rating
-        setQuestionStartTime(Date.now()); // Set start time for the question
-    }
-};
-
-    const handleRatingChange = (value) => {
-        setSelectedRating(value);
-    };
-
+    // Reset the rating and video when clicking "Next"
     const handleNextClick = () => {
-        const timeTaken = Date.now() - questionStartTime; // Calculate time taken
-        const currentScenario = scenarios[currentScenarioIndex];
-        const currentCategory = currentScenario.questionCategories[currentCategoryIndex];
-        
-        if (showAdditionalInput) {
-            // Save the additional input
-            const additionalResponse = {
-                scenarioId: currentScenarioIndex,
-                additionalComment: additionalInput
-            };
-            setResponses([...responses, additionalResponse]);
-            setShowAdditionalInput(false);
-            setAdditionalInput('');
-
-            // Move to the next scenario
-            moveToNextScenario();
-            if (currentQuestionNumber < totalQuestions) {
-                setCurrentQuestionNumber(currentQuestionNumber + 1);
-            }
-
-            setShowAdditionalInput(false);
-            return;
-        }
-        // Saving the response for the current question
+        // Save the current response
         const currentResponse = {
-            scenarioId: currentScenarioIndex,
-            categoryName: currentCategory.categoryName,
-            questionId: currentQuestion.questionId,
-            questionText: currentQuestion.questionText,
-            rating: selectedRating,
-            timeTaken: timeTaken // Add time taken to the response
+            gesture: currentGesture.id,
+            rating: selectedRating
         };
-
         setResponses([...responses, currentResponse]);
-        setSelectedRating(null); // Reset rating for the next question
-        setQuestionStartTime(Date.now()); // Reset start time for the next question
-        
-        if (currentCategoryIndex < currentScenario.questionCategories.length - 1) {
-            const nextCategoryIndex = currentCategoryIndex + 1;
-            setCurrentCategoryIndex(nextCategoryIndex);
-            pickRandomQuestion(currentScenarioIndex, nextCategoryIndex, scenarios);
+
+        // Reset the rating for the next question
+        setSelectedRating(null);
+
+        // Move to the next gesture and reset the flags
+        const nextGestureIndex = gestures.indexOf(currentGesture) + 1;
+        if (nextGestureIndex < gestures.length) {
+            setCurrentGesture(gestures[nextGestureIndex]);
+            resetStates(); // Reset states for the new question
         } else {
-            setShowAdditionalInput(true);
+            onComplete(responses); // If done, complete the flow
         }
     };
 
-    const moveToNextScenario = () => {
-        const newCount = completedScenariosCount + 1;
-        setCompletedScenariosCount(newCount);
+    // Function to reset state between gestures
+    const resetStates = () => {
+        console.log("in reset states")
+        setVideosCompleted(false); // Reset video completion
+        setShowComponent(false); // Hide the slider component until the new video finishes
+    };
 
-        if (newCount % 2 === 0 && newCount < scenarios.length) {
-            setShowMessage(true);
-        } else {
-            proceedToNextScenario();
+    // Trigger the animation and show the rating component when the video ends
+    useEffect(() => {
+        if (videosCompleted) {
+            setShowComponent(true); // Trigger the slide-down animation
         }
-    };
-
-    const proceedToNextScenario = () => {
-        const nextScenarioIndex = currentScenarioIndex + 1;
-        if (nextScenarioIndex < scenarios.length) {
-            setCurrentScenarioIndex(nextScenarioIndex);
-            setCurrentCategoryIndex(0);
-            pickRandomQuestion(nextScenarioIndex, 0, scenarios);
-        } else {
-            onComplete(responses);
-        }
-        setShowMessage(false);
-    };
-
-    const handleContinueClick = () => {
-        proceedToNextScenario();
-    };
-    
-    const handleAdditionalInputChange = (value) => {
-        setAdditionalInput(value);
-    };
+    }, [videosCompleted, currentGesture]); // Ensure it runs when `currentGesture` changes
 
     return (
-        <Box sx={{ width: '100%', maxWidth: 700, mx: 'auto', mt: 4, mb: 10}}>
+        <Box sx={{ width: '100%', maxWidth: 700, mx: 'auto', mt: 4, mb: 10 }}>
             <div>
-            {showMessage && (
-                    <Text 
-                        title="We Have Passed the 50% Mark"
-                        description="This is just a kind reminder that you honest opinion really matters here"
-                        buttonText="Continue"
-                        buttonDelay="100"
-                        onButtonClick={handleContinueClick}
-                    />
-                )}
-                
-                {!showMessage && scenarios.length > 0 && currentQuestion && !showAdditionalInput && (
+                {currentGesture && (
                     <>
-                        <ImageWithDescription 
-                            imageUrl={scenarios[currentScenarioIndex].imageUrl} 
-                            description={scenarios[currentScenarioIndex].description} 
+                        {/* Pass the movements as props to LoopOfMovements */}
+                        <LoopOfMovements 
+                            ids={currentGesture.movements} 
+                            onVideosEnd={() => setVideosCompleted(true)} // Trigger when videos end
                         />
-                        <RatingScale
-                            questionText={currentQuestion.questionText}
-                            description={currentQuestion.description}
-                            onValueChange={handleRatingChange}
-                            explanation={true}
-                            selectedValue={selectedRating}
-                        />
+
+                        {/* Conditionally render RatingScale or RealLabelScale based on video completion */}
+                        {showComponent && (
+                            <div className="slide-down"> {/* Apply the slide-down animation */}
+                                {USE_REAL_LABEL_SCALE ? (
+                                    <RealLabelScale
+                                        realLabel={currentGesture.realLabel[0]} // Pass the real label
+                                        onValueChange={(value) => {
+                                            setSelectedRating(value); // Update the rating
+                                        }}
+                                        selectedValue={selectedRating}
+                                    />
+                                ) : (
+                                    <RatingScale
+                                        questionText={`What kind of emotion do you think the robot is expressing?`}
+                                        description={"Please choose the label you think that best describes the emotion, there isn't a correct answer"}
+                                        realLabel={currentGesture.realLabel[0]}  // Pass the real emotion label from the gesture
+                                        emotions={emotions}  // Pass the global emotions list
+                                        onValueChange={(value) => {
+                                            setSelectedRating(value); // Update the rating
+                                        }}
+                                        selectedValue={selectedRating}
+                                        numOptions={numOptions}
+                                    />
+                                )}
+                            </div>
+                        )}
+
                         <Box sx={{ mt: 4, textAlign: 'left' }}>
                             <Button
                                 variant="outlined"
                                 color="secondary"
-                                disabled={selectedRating === null || !showNextButton}
                                 onClick={handleNextClick}
-                            >
-                                Next
-                            </Button>
-                        </Box>
-                    </>
-                )}
-                {!showMessage && showAdditionalInput && (
-                    <>
-                        <ImageWithDescription 
-                            imageUrl={scenarios[currentScenarioIndex].imageUrl} 
-                            description={scenarios[currentScenarioIndex].description} 
-                        />
-                        <LargeInput
-                            title="Are there any other features or considerations that would influence your decision to help the robot that have not been covered? Please elaborate."
-                            onInputChange={handleAdditionalInputChange}
-                        />
-                        <Box sx={{ mt: 4, textAlign: 'left' }}>
-                            <Button
-                                variant="outlined"
-                                color="secondary"
-                                disabled={additionalInput == ''}
-                                onClick={handleNextClick}
+                                disabled={selectedRating === null || !videosCompleted} // Disable until a rating is selected and videos are done
                             >
                                 Next
                             </Button>
