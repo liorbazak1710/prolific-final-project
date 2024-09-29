@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Text from '../SurveyComponents/Text';
-import ImageWithDescription from '../SurveyComponents/ImageWithDescription';
+import ImageWithDescription from '../SurveyComponents/ImageWithDescription'; // Import the component
 import RatingScale from '../SurveyComponents/RatingScale';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import LoopOfMovements from '../SurveyComponents/loopOfMovements';
 import { emotions } from '../params';
-
+import { USE_REAL_LABEL_SCALE } from '../config'; // adjust the path if necessary
+import RealLabelScale from '../SurveyComponents/RealLabelScale'; // New Component
 
 const ExamplePage = ({ onComplete }) => {
   const [showFirstText, setShowFirstText] = useState(true);
@@ -44,19 +45,18 @@ Please choose the label that best describes the emotion of the robot.`;
 
   const handleNextClick = () => {
     if (!isFormValid()) return; // Ensure the form is valid before proceeding
-  
+
     const endTime = new Date();
-    const timeTaken = (endTime - startTime); // Time taken in seconds
-  
+    const timeTaken = endTime - startTime; // Time taken in seconds
+
     const examplePageData = {
       rating: {
         question: "What kind of emotion do you think the robot is expressing?",
         response: selectedRating
       },
       timeTaken: timeTaken,
-      // Include any other relevant data here
     };
-  
+
     onComplete(examplePageData); // Pass the formatted data to the parent component
   };
 
@@ -68,13 +68,21 @@ Please choose the label that best describes the emotion of the robot.`;
     <Box sx={{ width: '100%', maxWidth: 700, mx: 'auto', mt: 4, mb: 10 }}>
       <div>
         {showFirstText && (
-          <Text
-            title="Let's Start with an Example"
-            description={description}
-            buttonText="I Understand"
-            buttonDelay={5000}
-            onButtonClick={handleFirstButtonClick}
-          />
+          <>
+            {/* Adding ImageWithDescription under showFirstText */}
+            <ImageWithDescription 
+              imageUrl="/example.png"  // Replace with the actual path to your image
+              description="In this experiment, you will observe a robot of the Go2 model, as depicted in the image."
+            />
+
+            <Text
+              title="Let's Start with an Example"
+              description={description}
+              buttonText="I Understand"
+              buttonDelay={5000}
+              onButtonClick={handleFirstButtonClick}
+            />
+          </>
         )}
 
         {showImage && (
@@ -82,10 +90,11 @@ Please choose the label that best describes the emotion of the robot.`;
             <LoopOfMovements ids={["20"]} />
           </>
         )}
+        
         {showSecondText && (
           <>
             <Text
-              title="Let's go over an example"
+              title="Let’s review the example. In this example, you will be able to respond immediately; however, during the actual experiment, you will be required to watch the video at least once before submitting your response."
               buttonText="Let's See"
               buttonDelay={100}
               onButtonClick={handleSecondButtonClick}
@@ -95,21 +104,29 @@ Please choose the label that best describes the emotion of the robot.`;
 
         {showRatingScale && (
           <>
-            <RatingScale
-              questionText="What kind of emotion do you think the robot is trying to express?"
-              description={scale_desc}
-              realLabel={realLabel} // Pass the real emotion (from JSON)
-              emotions={emotions} // Pass the global emotions list
-              onValueChange={handleRatingChange}
-              selectedValue={selectedRating}
-              numOptions={5}
-            />
+            {USE_REAL_LABEL_SCALE ? (
+              <RealLabelScale
+                realLabel={realLabel} // Use the same realLabel variable
+                onValueChange={handleRatingChange}
+                selectedValue={selectedRating}
+              />
+            ) : (
+              <RatingScale
+                questionText="What kind of emotion do you think the robot is trying to express?"
+                description={scale_desc} // Keep the description variable
+                realLabel={realLabel} // Pass the same real emotion label from JSON
+                emotions={emotions} // Use the global emotions list
+                onValueChange={handleRatingChange} // Keep the original handler
+                selectedValue={selectedRating}
+                numOptions={5} // Fixed number of options
+              />
+            )}
 
             <Box sx={{ mt: 4, textAlign: 'left' }}>
-              <Button 
+              <Button
                 variant="outlined"
                 color="secondary"
-                onClick={handleNextClick} 
+                onClick={handleNextClick}
                 disabled={!isFormValid()}
                 sx={{ minHeight: '50px', minWidth: '150px', float: 'left' }}
               >
@@ -118,6 +135,7 @@ Please choose the label that best describes the emotion of the robot.`;
             </Box>
           </>
         )}
+
       </div>
     </Box>
   );

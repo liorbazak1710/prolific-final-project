@@ -7,6 +7,8 @@ import QuestionPage from './Pages/QuestionPage';
 import FinishPage from './Pages/FinishPage'; // Import FinishPage
 import StartPage from './Pages/StartPage';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import addTaggerJson from './API/taggersAPI';
+import { addGestureEx } from './API/newExperimentAPI';
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -36,7 +38,7 @@ function App() {
     setCurrentStep(3); // Move to QuestionPage
   };
 
-  const handleQuestionPageComplete = (questionData) => {
+  const handleQuestionPageComplete =   (questionData) => {
     setSurveyData({ ...surveyData, questionPage: questionData });
     setCurrentStep(5); // Move to FinishPage
   };
@@ -45,7 +47,7 @@ function App() {
     setCurrentStep(4); // Move to SurveyIntro
   };
 
-  const handleFinishPageComplete = (finishData) => {
+  const handleFinishPageComplete = async (finishData) => {
     const completedSurveyData = { 
       ...surveyData, 
       finishPage: finishData,
@@ -53,19 +55,16 @@ function App() {
       ...urlParams
     };
 
-    // Send data to the server
-    fetch("https://24d6houomeioliarmgrwonbi7m0nmblf.lambda-url.eu-central-1.on.aws/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(completedSurveyData)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.completionLink) {
-        window.location.href = data.completionLink;
-      }
-    })
-    .catch(error => console.error('Error:', error));
+    await addTaggerJson(completedSurveyData.personalDetails)
+
+    console.log('params: ' + JSON.stringify(completedSurveyData))
+
+    let data = await addGestureEx(completedSurveyData)
+
+    if (data.completionLink) {
+      window.location.href = data.completionLink;
+    }
+   
   };
 
   const renderStep = () => {

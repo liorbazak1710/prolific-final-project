@@ -1,77 +1,85 @@
-import { useContext } from "react";
-import { mapEnglishToHebrew , mapHebrewToEnglish} from "./emotions";
-import {BASE_URL} from '../params.js'
+import { BASE_URL } from '../params.js';
 
-
-function addGestureEx(newGesture) {
-  return new Promise((resolve, reject) => {
+// Refactor addGestureEx to use async/await
+async function addGestureEx(newExp) {
+  try {
     // Get the current maximum ID
-    fetch(BASE_URL + "/newExperiment")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-        const maxId = data ? Math.max(...data.map((gesture) => gesture.id)) : 0;
-        // Add 1 to the maximum ID to get the next ID for the new gesture
-        const nextId = maxId + 1;
-        // Add the new gesture with the next ID
-        fetch(BASE_URL + "/newExperiment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: nextId, ...newGesture }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            // Update the gestures state with the new gesture
-            // setGestures([...gestures, data]);
+    const response = await fetch(BASE_URL + "/newExperiment");
+    const data = await response.json();
+    
+    console.log(data);
+    const maxId = data ? Math.max(...data.map((exp) => exp.id)) : 0;
+    
+    // Add 1 to the maximum ID to get the next ID for the new gesture
+    const nextId = maxId + 1;
+    
+    // Add the new gesture with the next ID
+    const addResponse = await fetch(BASE_URL + "/newExperiment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: nextId, ...newExp }),
+    });
 
-            // Resolve the promise with the new ID
-            resolve(data.id);
-          })
-          .catch((error) => reject(error));
-      })
-      .catch((error) => {
-        console.log("Error fetching gestures:", error);
-        reject(error);
-      });
-  });
+    const newData = await addResponse.json();
+    return newData.id; // Resolve the promise with the new ID
+  } catch (error) {
+    console.error("Error adding gesture:", error);
+    throw error; // Reject the promise with the error
+  }
 }
 
-
-  function getAllGesturesEx() {
-    return fetch(BASE_URL + "/newExperiment")
-      .then((response) => response.json())
-      .catch((error) => console.log("Error fetching gestures:", error));
+// Refactor getAllGesturesEx to use async/await
+async function getAllGesturesEx() {
+  try {
+    const response = await fetch(BASE_URL + "/newExperiment");
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching gestures:", error);
+    throw error;
   }
+}
 
-  async function deleteAllExperiments() {
-    fetch(BASE_URL + "/newExperiment")
-      .then(response => response.json())
-      .then(experiments => {
-        experiments.forEach(experiment => {
-          fetch(BASE_URL + '/newExperiment/' + experiment.id, {
-            method: 'DELETE'
-          })
-          .catch((error) => console.log(`Error deleting experiment ${experiment.id}:`, error));
+// Refactor deleteAllExperiments to use async/await
+async function deleteAllExperiments() {
+  try {
+    const response = await fetch(BASE_URL + "/newExperiment");
+    const experiments = await response.json();
+
+    for (const experiment of experiments) {
+      try {
+        await fetch(BASE_URL + '/newExperiment/' + experiment.id, {
+          method: 'DELETE'
         });
-      })
-      .catch((error) => console.log('Error fetching experiments:', error));
+        console.log(`Experiment ${experiment.id} deleted successfully.`);
+      } catch (error) {
+        console.error(`Error deleting experiment ${experiment.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching experiments:', error);
+    throw error;
   }
+}
 
-  function deleteExperiment(experimentId) {
-    fetch(BASE_URL + '/newExperiment/' + experimentId, {
+// Refactor deleteExperiment to use async/await
+async function deleteExperiment(experimentId) {
+  try {
+    const response = await fetch(BASE_URL + '/newExperiment/' + experimentId, {
       method: 'DELETE'
-    })
-      .then(response => {
-        if (response.ok) {
-          console.log(`Experiment ${experimentId} deleted successfully.`);
-          // Perform any additional actions after deleting the experiment
-        } else {
-          console.log(`Error deleting experiment ${experimentId}.`);
-        }
-      })
-      .catch(error => console.log(`Error deleting experiment ${experimentId}:`, error));
-  }
+    });
 
-export {addGestureEx, getAllGesturesEx, deleteAllExperiments, deleteExperiment};
+    if (response.ok) {
+      console.log(`Experiment ${experimentId} deleted successfully.`);
+    } else {
+      console.error(`Error deleting experiment ${experimentId}.`);
+    }
+  } catch (error) {
+    console.error(`Error deleting experiment ${experimentId}:`, error);
+    throw error;
+  }
+}
+
+export { addGestureEx, getAllGesturesEx, deleteAllExperiments, deleteExperiment };

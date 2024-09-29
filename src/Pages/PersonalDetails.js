@@ -4,6 +4,8 @@ import SelectionBox from '../SurveyComponents/SelectionBox';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import { v4 as uuidv4 } from 'uuid';
+
 
 const PersonalDetails = ({ onComplete }) => {
     const [age, setAge] = useState('');
@@ -20,34 +22,38 @@ const PersonalDetails = ({ onComplete }) => {
     }, []);
   
     const handleNextClick = () => {
-        if (!age || !education || !gender) {
-          setAgeError(!age ? "Please enter your age." : "");
-          setEducationError(!education ? "Please select your education level." : "");
-          setGenderError(!gender ? "Please select your gender." : "");
-        } else {
-          const endTime = new Date();
-          const timeTaken = (endTime - startTime)
-      
-          const personalDetailsData = {
-            age: {
-              question: "What is your age?",
-              response: age
-            },
-            education: {
-              question: "What is your highest level of education?",
-              response: education
-            },
-            gender: {
-              question: "What is your gender?",
-              response: gender
-            },
-            timeTaken: timeTaken,
-          };
-      
-          onComplete(personalDetailsData);
-        }
-      };
-      
+      if (!age || !education || !gender) {
+        setAgeError(!age ? "Please enter your age." : "");
+        setEducationError(!education ? "Please select your education level." : "");
+        setGenderError(!gender ? "Please select your gender." : "");
+      } else {
+        const endTime = new Date();
+        const timeTaken = endTime - startTime;
+    
+        // Generate a UUID for the user
+        const userId = uuidv4();
+    
+        const personalDetailsData = {
+          userId: userId, // Add the UUID here
+          age: {
+            question: "What is your age?",
+            response: age
+          },
+          education: {
+            question: "What is your highest level of education?",
+            response: education
+          },
+          gender: {
+            question: "What is your gender?",
+            response: gender
+          },
+          timeTaken: timeTaken,
+        };
+    
+        onComplete(personalDetailsData);
+      }
+    };
+    
   
     const isFormValid = () => {
       return age && education && gender && !ageError && !educationError && !genderError;

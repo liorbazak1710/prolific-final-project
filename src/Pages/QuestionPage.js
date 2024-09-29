@@ -6,9 +6,8 @@ import Box from '@mui/material/Box';
 import { getAllGestures, getCSVGestures } from '../API/gesturesAPI';
 import LoopOfMovements from '../SurveyComponents/loopOfMovements';
 import './animations.css'; // Import the CSS file with the animation
+import { USE_REAL_LABEL_SCALE } from '../config'; // adjust the path if necessary
 
-// Mock global flag
-const USE_REAL_LABEL_SCALE = true; // Set this flag to switch between components
 
 const QuestionPage = ({ jsonFileName, onComplete }) => {
     const [gestures, setGestures] = useState([]);
