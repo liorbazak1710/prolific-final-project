@@ -6,15 +6,12 @@ import ExamplePage from './Pages/ExamplePage';
 import QuestionPage from './Pages/QuestionPage';
 import FinishPage from './Pages/FinishPage'; // Import FinishPage
 import StartPage from './Pages/StartPage';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import addTaggerJson from './API/taggersAPI';
 import { addGestureEx } from './API/newExperimentAPI';
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [surveyData, setSurveyData] = useState({});
   const [urlParams, setUrlParams] = useState({});
-  const navigate = useNavigate();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -29,7 +26,7 @@ function App() {
   };
 
   const handlePersonalDetailsComplete = (details) => {
-    setSurveyData({ ...surveyData, personalDetails: details });
+    setSurveyData({ ...surveyData, date: new Date(), personalDetails: details });
     setCurrentStep(2); // Move to ExamplePage
   };
 
@@ -55,13 +52,10 @@ function App() {
       ...urlParams
     };
 
-    await addTaggerJson(completedSurveyData.personalDetails)
-
-    console.log('params: ' + JSON.stringify(completedSurveyData))
 
     let data = await addGestureEx(completedSurveyData)
 
-    if (data.completionLink) {
+    if (data.completionLink !== undefined) {
       window.location.href = data.completionLink;
     }
    
@@ -78,7 +72,7 @@ function App() {
       case 3:
         return <StartPage onAgree={handleStart} />;
       case 4:
-        return <QuestionPage jsonFileName="questions_2.json" onComplete={handleQuestionPageComplete} />;
+        return <QuestionPage onComplete={handleQuestionPageComplete} />;
       case 5:
         return <FinishPage onComplete={handleFinishPageComplete} />;
       default:

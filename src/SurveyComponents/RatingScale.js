@@ -45,6 +45,7 @@ const RatingScale = ({
   readOnly, 
   error, 
   onValueChange, 
+  onCombinedEmotions,
   realLabel,   // Real emotion from the gesture
   emotions,    // Global emotions list
   selectedValue, 
@@ -69,6 +70,7 @@ const RatingScale = ({
     const randomEmotions = otherEmotions.sort(() => 0.5 - Math.random()).slice(0, numOptions);
     console.log(randomEmotions)
     const combinedEmotions = [...randomEmotions, realLabel].sort(() => 0.5 - Math.random()); // Shuffle with realLabel
+    onCombinedEmotions(emotions);
     return combinedEmotions;
   };
 

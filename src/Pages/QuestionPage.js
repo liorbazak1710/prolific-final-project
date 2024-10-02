@@ -9,15 +9,17 @@ import './animations.css'; // Import the CSS file with the animation
 import { USE_REAL_LABEL_SCALE } from '../config'; // adjust the path if necessary
 
 
-const QuestionPage = ({ jsonFileName, onComplete }) => {
+const QuestionPage = ({ onComplete }) => {
     const [gestures, setGestures] = useState([]);
     const [currentGesture, setCurrentGesture] = useState(null);
     const [responses, setResponses] = useState([]);
     const [selectedRating, setSelectedRating] = useState(null); // Track the rating
     const [emotions, setEmotions] = useState([]);
+    const [shuffEmotions, setShuffledEmotions] = useState([]);
     const [numOptions, setNumOptions] = useState(4);
     const [videosCompleted, setVideosCompleted] = useState(false); // Track video completion
     const [showComponent, setShowComponent] = useState(false); // Track when to show the rating component with animation
+    const [startTime, setStartTime] = useState(null); // Track the start time
 
     useEffect(() => {
         const loadGestures = async () => {
@@ -35,6 +37,7 @@ const QuestionPage = ({ jsonFileName, onComplete }) => {
             const shuffledGestures = shuffleArray(filteredGestures);
             setGestures(shuffledGestures);
             setCurrentGesture(shuffledGestures[0]); // Set the first gesture
+            setStartTime(Date.now()); // Set the start time when the first gesture is shown
         };
 
         loadGestures();
@@ -47,12 +50,24 @@ const QuestionPage = ({ jsonFileName, onComplete }) => {
 
     // Reset the rating and video when clicking "Next"
     const handleNextClick = () => {
+        const currentTime = Date.now();
+        const responseTime = currentTime - startTime; // Calculate response time
+
         // Save the current response
         const currentResponse = {
             gesture: currentGesture.id,
-            rating: selectedRating
+            rating: selectedRating,
+            options: shuffEmotions,
+            responseTime // Add the response time
         };
-        setResponses([...responses, currentResponse]);
+
+        console.log("current response, " + currentGesture.id)
+         // Instead of mutating the original array, create a copy and add the new response
+        const updatedResponses = [...responses]; // Create a new copy of the responses array
+        updatedResponses.push(currentResponse); // Add the new response
+
+        // Now update the state with the new array
+        setResponses(updatedResponses);
 
         // Reset the rating for the next question
         setSelectedRating(null);
@@ -62,18 +77,24 @@ const QuestionPage = ({ jsonFileName, onComplete }) => {
         if (nextGestureIndex < gestures.length) {
             setCurrentGesture(gestures[nextGestureIndex]);
             resetStates(); // Reset states for the new question
+            setStartTime(Date.now()); // Set the start time for the new gesture
         } else {
-            onComplete(responses); // If done, complete the flow
+            console.log("responses" + JSON.stringify(updatedResponses))
+            onComplete(updatedResponses); // If done, complete the flow
         }
     };
 
+
     // Function to reset state between gestures
     const resetStates = () => {
-        console.log("in reset states")
+        console.log("in reset states");
         setVideosCompleted(false); // Reset video completion
         setShowComponent(false); // Hide the slider component until the new video finishes
     };
 
+    const onCombinedEmotions = (emotions) => {
+        setShuffledEmotions(emotions);
+    }
     // Trigger the animation and show the rating component when the video ends
     useEffect(() => {
         if (videosCompleted) {
@@ -87,8 +108,8 @@ const QuestionPage = ({ jsonFileName, onComplete }) => {
                 {currentGesture && (
                     <>
                         {/* Pass the movements as props to LoopOfMovements */}
-                        <LoopOfMovements 
-                            ids={currentGesture.movements} 
+                        <LoopOfMovements
+                            ids={currentGesture.movements}
                             onVideosEnd={() => setVideosCompleted(true)} // Trigger when videos end
                         />
 
@@ -111,6 +132,9 @@ const QuestionPage = ({ jsonFileName, onComplete }) => {
                                         emotions={emotions}  // Pass the global emotions list
                                         onValueChange={(value) => {
                                             setSelectedRating(value); // Update the rating
+                                        }}
+                                        onCombinedEmotions= {(emotions) => {
+                                            onCombinedEmotions(emotions);
                                         }}
                                         selectedValue={selectedRating}
                                         numOptions={numOptions}

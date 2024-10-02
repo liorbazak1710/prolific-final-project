@@ -1,1 +1,1 @@
-export const USE_REAL_LABEL_SCALE = true; // Set this flag to switch between components
+export const USE_REAL_LABEL_SCALE = false; // Set this flag to switch between components

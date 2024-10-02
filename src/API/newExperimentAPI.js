@@ -1,4 +1,6 @@
 import { BASE_URL } from '../params.js';
+import { v4 as uuidv4 } from 'uuid';
+
 
 // Refactor addGestureEx to use async/await
 async function addGestureEx(newExp) {
@@ -8,10 +10,6 @@ async function addGestureEx(newExp) {
     const data = await response.json();
     
     console.log(data);
-    const maxId = data ? Math.max(...data.map((exp) => exp.id)) : 0;
-    
-    // Add 1 to the maximum ID to get the next ID for the new gesture
-    const nextId = maxId + 1;
     
     // Add the new gesture with the next ID
     const addResponse = await fetch(BASE_URL + "/newExperiment", {
@@ -19,10 +17,11 @@ async function addGestureEx(newExp) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: nextId, ...newExp }),
+      body: JSON.stringify({ id: uuidv4(), ...newExp }),
     });
 
     const newData = await addResponse.json();
+    console.log("add success")
     return newData.id; // Resolve the promise with the new ID
   } catch (error) {
     console.error("Error adding gesture:", error);
