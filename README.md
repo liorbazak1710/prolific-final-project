@@ -287,11 +287,11 @@ Build the project from source:
 To run the project, execute the following command:
 
 ```
-PORT=3001 npm start
+PORT=3002 npm start
 ```
 or in windows:
 ```
- set PORT=3001 && npm start
+ set PORT=3002 && npm start
 ```
 
 __Make sure the json server is already running!!__
