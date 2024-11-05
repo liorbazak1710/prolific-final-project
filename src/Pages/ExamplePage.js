@@ -118,6 +118,7 @@ Please choose the label that best describes the emotion of the robot.`;
                 emotions={emotions} // Use the global emotions list
                 onValueChange={handleRatingChange} // Keep the original handler
                 selectedValue={selectedRating}
+                onCombinedEmotions= {(emotions) => {}}
                 numOptions={5} // Fixed number of options
               />
             )}
