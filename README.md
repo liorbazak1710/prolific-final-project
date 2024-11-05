@@ -270,6 +270,7 @@ Build the project from source:
 ```sh
 ❯ git clone https://github.com/liorbazak1710/prolific-final-project
 ```
+1.1 install nodeJS via [https://nodejs.org/en]
 
 2. Navigate to the project directory:
 ```sh
@@ -285,9 +286,15 @@ Build the project from source:
 
 To run the project, execute the following command:
 
-```sh
-❯ npm start
 ```
+PORT=3001 npm start
+```
+or in windows:
+```
+ set PORT=3001 && npm start
+```
+
+__Make sure the json server is already running!!__
 
 ### 🧪 Tests
 
@@ -343,6 +350,9 @@ Contributions are welcome! Here are several ways you can contribute:
 </details>
 
 ---
+
+## Important
+base url is currently localhost:3000 in order to change that please change params.js parameter under the namse BASE_URL
 
 ## 🎗 License
 
