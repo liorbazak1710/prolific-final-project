@@ -352,7 +352,7 @@ Contributions are welcome! Here are several ways you can contribute:
 ---
 
 ## Important
-base url is currently localhost:3000 in order to change that please change params.js parameter under the namse BASE_URL
+base url is currently localhost:3005 in order to change that please change params.js parameter under the namse BASE_URL
 
 ## 🎗 License
 
